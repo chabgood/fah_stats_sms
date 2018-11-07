@@ -1,0 +1,40 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    coderay (1.1.2)
+    dotenv (2.5.0)
+    faraday (0.15.3)
+      multipart-post (>= 1.2, < 3)
+    httparty (0.16.2)
+      multi_xml (>= 0.5.2)
+    json (2.1.0)
+    jwt (2.1.0)
+    method_source (0.9.1)
+    mini_portile2 (2.3.0)
+    multi_xml (0.6.0)
+    multipart-post (2.0.0)
+    nokogiri (1.8.5)
+      mini_portile2 (~> 2.3.0)
+    pry (0.12.0)
+      coderay (~> 1.1.0)
+      method_source (~> 0.9.0)
+    twilio-ruby (5.15.2)
+      faraday (~> 0.9)
+      jwt (>= 1.5, <= 2.5)
+      nokogiri (>= 1.6, < 2.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  dotenv
+  httparty
+  json
+  pry
+  twilio-ruby
+
+RUBY VERSION
+   ruby 2.5.1p57
+
+BUNDLED WITH
+   1.16.3
