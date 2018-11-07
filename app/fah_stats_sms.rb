@@ -36,29 +36,26 @@ class FahStatsSms
     file_hash = JSON.parse(file)
     contributed = file_hash["contributed"].to_i
     return if api_total == contributed  # exit early if there is no change
-    if api_total < contributed
-      p "api_total < contributed"
-      File.open("fah.json", "w") do |f|
-        f.write({ contributed: api_total, current_work: 0 }.to_json)
-      end
-    elsif api_total > contributed
-      p "api_total > contributed"
-      File.open("fah.json", "w") do |f|
-        current_work = (api_total - contributed) == api_total ? 0 : api_total - contributed
-        f.write({ contributed: api_total, current_work: current_work }.to_json)
-      end
-    end
-
-    total_human = number_to_human(file_hash['contributed'], precision: 5)
-    current_work = number_to_human(file_hash["current_work"], precision: 5)
-    client.messages.create(
-      from: from,
-      to: to,
-      body: "
-      Current_total: #{total_human}, \nCurrent_work: #{current_work}"
-    )
+    current_work = (api_total - contributed) == api_total ? 0 : api_total - contributed
+    update_file(api_total, current_work)
+    send_sms(file_hash)
   end
 
+  private
+
+  def update_file(api_total, current_work)
+    File.open("fah.json", "w") do |f|
+      f.write({ contributed: api_total, current_work: current_work }.to_json)
+    end
+  end
+
+  def send_sms(file_hash)
+    total_human = number_to_human(file_hash['contributed'], precision: 5)
+    current_work = number_to_human(file_hash["current_work"], precision: 5)
+    client.messages.create(from: from, to: to,
+      body: "Current_total: #{total_human}, \nCurrent_work: #{current_work}"
+    )
+  end
 end
 
 fah = FahStatsSms.new
