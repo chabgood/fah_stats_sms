@@ -1,10 +1,13 @@
-require 'pry'
+#!/usr/bin/env ruby
+
+#require 'pry'
 require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
 require 'json'
-require 'dotenv/load'
+require 'dotenv'
 
+Dotenv.load
 
 class FahStatsSms
   include HTTParty
@@ -29,31 +32,19 @@ class FahStatsSms
   end
 
   def run
+    p self
     data = self.class.get('/user/MrMoo/stats', query).parsed_response
     api_total = data['contributed'].to_i
-
-    file = File.read("fah.json")
-    file_hash = JSON.parse(file)
-    contributed = file_hash["contributed"].to_i
-    return if api_total == contributed  # exit early if there is no change
-    current_work = (api_total - contributed) == api_total ? 0 : api_total - contributed
-    update_file(api_total, current_work)
-    send_sms(file_hash)
+    #return if api_total == contributed  # exit early if there is no change
+    send_sms(api_total)
   end
 
   private
 
-  def update_file(api_total, current_work)
-    File.open("fah.json", "w") do |f|
-      f.write({ contributed: api_total, current_work: current_work }.to_json)
-    end
-  end
-
-  def send_sms(file_hash)
-    total_human = number_to_human(file_hash['contributed'], precision: 5)
-    current_work = number_to_human(file_hash["current_work"], precision: 5)
-    client.messages.create(from: from, to: to,
-      body: "Current_total: #{total_human}, \nCurrent_work: #{current_work}"
+  def send_sms(api_total)
+    total_human = number_to_human(api_total, precision: 5)
+    self.client.messages.create(from: self.from, to: self.to,
+      body: "Current_total: #{total_human}"
     )
   end
 end
