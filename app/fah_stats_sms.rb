@@ -32,10 +32,11 @@ class FahStatsSms
   end
 
   def run
-    p self
     data = self.class.get('/user/MrMoo/stats', query).parsed_response
     api_total = data['contributed'].to_i
-    #return if api_total == contributed  # exit early if there is no change
+    file = File.read("fah.json")
+    file_hash = JSON.parse(file)
+    return if api_total == file_hash["contributed"]  # exit early if there is no change
     send_sms(api_total)
   end
 
