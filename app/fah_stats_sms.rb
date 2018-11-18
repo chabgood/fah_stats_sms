@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env /home/chabgood/.rbenv/versions/2.5.3/bin/ruby
 
 #require 'pry'
 require 'httparty'
@@ -28,15 +28,14 @@ class FahStatsSms
     @auth_token = ENV["AUTH_TOKEN"]
     @client = Twilio::REST::Client.new(account_sid, auth_token)
     @from = ENV["FROM"]
-    @to = ENV["TO"]
+    @to =  ENV["TO"]
   end
 
   def run
-    data = self.class.get('/user/MrMoo/stats', query).parsed_response
-    api_total = data['contributed'].to_i
-    file = File.read("fah.json")
-    file_hash = JSON.parse(file)
+    api_total = get_data
+    file_hash = load_file
     return if api_total == file_hash["contributed"]  # exit early if there is no change
+    update_total(api_total)
     send_sms(api_total)
   end
 
@@ -47,6 +46,22 @@ class FahStatsSms
     self.client.messages.create(from: self.from, to: self.to,
       body: "Current_total: #{total_human}"
     )
+  end
+
+  def update_total(api_total)
+    File.open("fah.json", "w") do |f|
+      f.write({ contributed: api_total }.to_json)
+    end
+  end
+
+  def load_file
+    file = File.read("fah.json")
+    return JSON.parse(file)
+  end
+
+  def get_data
+    data = self.class.get('/user/MrMoo/stats', query).parsed_response
+    return data['contributed'].to_i
   end
 end
 
