@@ -1,6 +1,4 @@
-#!/usr/bin/env /home/chabgood/.rbenv/versions/2.5.3/bin/ruby
-
-#require 'pry'
+require 'pry'
 require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
@@ -49,13 +47,13 @@ class FahStatsSms
   end
 
   def update_total(api_total)
-    File.open("fah.json", "w") do |f|
+    File.open("../fah.json", "w") do |f|
       f.write({ contributed: api_total }.to_json)
     end
   end
 
   def load_file
-    file = File.read("fah.json")
+    file = File.read("../fah.json")
     return JSON.parse(file)
   end
 
