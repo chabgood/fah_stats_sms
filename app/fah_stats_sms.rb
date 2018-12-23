@@ -43,7 +43,7 @@ class FahStatsSms
     stats = number_to_human(api_total[:stats], precision: 5)
     rank = number_to_human(api_total[:rank], precision: 5)
     self.client.messages.create(from: self.from, to: self.to,
-      body: "Current_total: #{stats} \n Rank: #{rank}"
+      body: "Current Team Total: #{stats} \n Total Rank: #{rank}"
     )
   end
 
