@@ -1,4 +1,4 @@
-require 'pry'
+#require 'pry'
 require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
@@ -32,7 +32,7 @@ class FahStatsSms
   def run
     api_total = get_data
     file_hash = load_file
-    return if api_total == file_hash["contributed"]  # exit early if there is no change
+    return if api_total[:stats] == file_hash["contributed"]  # exit early if there is no change
     update_total(api_total)
     send_sms(api_total)
   end
@@ -40,9 +40,10 @@ class FahStatsSms
   private
 
   def send_sms(api_total)
-    total_human = number_to_human(api_total, precision: 5)
+    stats = number_to_human(api_total[:stats], precision: 5)
+    rank = number_to_human(api_total[:rank], precision: 5)
     self.client.messages.create(from: self.from, to: self.to,
-      body: "Current_total: #{total_human}"
+      body: "Current_total: #{stats} \n Rank: #{rank}"
     )
   end
 
@@ -58,8 +59,9 @@ class FahStatsSms
   end
 
   def get_data
-    data = self.class.get('/user/MrMoo/stats', query).parsed_response
-    return data['contributed'].to_i
+    data_stats = self.class.get('/user/MrMoo/stats', query).parsed_response
+    data_rank = self.class.get('/user/MrMoo').parsed_response
+    return { stats: data_stats['contributed'].to_i, rank: data_rank['rank'].to_i }
   end
 end
 
