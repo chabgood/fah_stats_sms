@@ -32,7 +32,7 @@ class FahStatsSms
   def run
     api_total = get_data
     file_hash = load_file
-    return if api_total[:stats] == file_hash["contributed"]  # exit early if there is no change
+    return if api_total[:stats] == file_hash["contributed"]
     update_total(api_total)
     send_sms(api_total)
   end
@@ -59,9 +59,8 @@ class FahStatsSms
   end
 
   def get_data
-    data_stats = self.class.get('/user/MrMoo/stats', query).parsed_response
     data_rank = self.class.get('/user/MrMoo').parsed_response
-    return { stats: data_stats['contributed'].to_i, rank: data_rank['rank'].to_i }
+    return { stats: score.to_i, rank: data_rank['rank'].to_i }
   end
 end
 
