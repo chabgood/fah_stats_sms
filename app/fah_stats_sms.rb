@@ -32,7 +32,8 @@ class FahStatsSms
   def run
     api_total = get_data
     file_hash = load_file
-    return if api_total[:stats] == file_hash["contributed"]
+    p api_total[:stats] == file_hash["stats"]
+    return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
     send_sms(api_total)
   end
@@ -48,19 +49,20 @@ class FahStatsSms
   end
 
   def update_total(api_total)
-    File.open("../fah.json", "w") do |f|
-      f.write({ contributed: api_total }.to_json)
+    File.open("#{File.dirname(__FILE__)}/../fah.json", "w") do |f|
+      f.write({ stats: api_total[:stats], rank: api_total[:rank] }.to_json)
     end
   end
 
   def load_file
-    file = File.read("../fah.json")
+    file = File.read("#{File.dirname(__FILE__)}/../fah.json")
     return JSON.parse(file)
   end
 
   def get_data
     data_rank = self.class.get('/user/MrMoo').parsed_response
-    return { stats: score.to_i, rank: data_rank['rank'].to_i }
+    score = data_rank['teams'][0]['score']
+    return { stats: score, rank: data_rank['rank'].to_i }
   end
 end
 
