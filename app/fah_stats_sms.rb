@@ -1,11 +1,22 @@
-#require 'pry'
+require 'bundler/inline'
+
+gemfile do
+  source 'https://rubygems.org'
+  ruby '2.5.3'
+
+  gem 'httparty'
+  gem 'twilio-ruby'
+  gem 'pry'
+  gem 'json'
+  gem 'actionview'
+end
+
+require 'pry'
 require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
 require 'json'
-require 'dotenv'
 
-Dotenv.load
 
 class FahStatsSms
   include HTTParty
@@ -32,7 +43,6 @@ class FahStatsSms
   def run
     api_total = get_data
     file_hash = load_file
-    p api_total[:stats] == file_hash["stats"]
     return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
     send_sms(api_total)
