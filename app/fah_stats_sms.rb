@@ -9,8 +9,10 @@ gemfile do
   gem 'pry'
   gem 'json'
   gem 'actionview'
+  gem 'dotenv'
 end
 
+require 'dotenv/load'
 require 'pry'
 require 'httparty'
 require 'action_view'
