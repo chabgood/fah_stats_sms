@@ -55,8 +55,9 @@ class FahStatsSms
   def send_sms(api_total)
     stats = number_to_human(api_total[:stats], precision: 5)
     rank = number_to_human(api_total[:rank], precision: 5)
+    score = number_to_human(api_total[:score], precision:5)
     self.client.messages.create(from: self.from, to: self.to,
-      body: "Current Team Total: #{stats} \n Total Rank: #{rank}"
+      body: "Score: #{score} \n Current Team Total: #{stats} \n Total Rank: #{rank}"
     )
   end
 
@@ -74,7 +75,7 @@ class FahStatsSms
   def get_data
     data_rank = self.class.get('/user/MrMoo').parsed_response
     score = data_rank['teams'][0]['score']
-    return { stats: score, rank: data_rank['rank'].to_i }
+    return { stats: score, rank: data_rank['rank'].to_i, score: data_rank['score'] }
   end
 end
 
