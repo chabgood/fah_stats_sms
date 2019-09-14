@@ -50,8 +50,7 @@ class FahStatsSms
     file_hash = load_file
     return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
-    get_ppd
-    get_gpus_running
+    get_ppd_and_gpus_running
     send_sms(api_total)
   end
 
@@ -84,12 +83,9 @@ class FahStatsSms
     return { stats: score, rank: data_rank['rank'].to_i, score: data_rank['score'] }
   end
 
-  def get_ppd
+  def get_ppd_and_gpus_running
     pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
     pop.cmd("ppd") { |c| self.ppd = c.scan(/^[0-9]*\.[0-9]*$/).last }
-  end
-
-  def get_gpus_running
     pop.cmd("slot-info") { |c| self.gpus_running = c.scan(/RUNNING/).length }
   end
 end
