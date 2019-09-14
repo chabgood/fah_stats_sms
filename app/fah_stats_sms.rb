@@ -27,12 +27,13 @@ class FahStatsSms
 
   base_uri 'https://api.foldingathome.org/'
 
-  attr_accessor :number, :query, :account_sid, :auth_token, :client, :to, :from, :ppd
+  attr_accessor :number, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running
 
   def initialize()
     @number = 0
     @query = { query: {  passkey: ENV["PASSKEY"], team: ENV["TEAM"], header: { 'Content-Type' => 'application/json' } } }
     @ppd = 0
+    @gpus_running = 0
     initialize_twilio_info
   end
 
@@ -50,6 +51,7 @@ class FahStatsSms
     return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
     get_ppd
+    get_gpus_running
     send_sms(api_total)
   end
 
@@ -61,7 +63,7 @@ class FahStatsSms
     score = number_to_human(api_total[:score], precision: 5)
     ppd = number_to_human(self.ppd, precision: 5)
     self.client.messages.create(from: self.from, to: self.to,
-      body: "Score: #{score} \n Current Team Total: #{stats} \n Total Rank: #{rank} \n PPD: #{ppd}"
+      body: "Score: #{score} \n Current Team Total: #{stats} \n Total Rank: #{rank} \n PPD: #{ppd} \n GPUS: #{self.gpus_running}"
     )
   end
 
@@ -85,6 +87,10 @@ class FahStatsSms
   def get_ppd
     pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
     pop.cmd("ppd") { |c| self.ppd = c.scan(/^[0-9]*\.[0-9]*$/).last }
+  end
+
+  def get_gpus_running
+    pop.cmd("slot-info") { |c| self.gpus_running = c.scan(/RUNNING/).length }
   end
 end
 
