@@ -67,13 +67,13 @@ class FahStatsSms
   end
 
   def update_total(api_total)
-    File.open("#{File.dirname(__FILE__)}/../fah.json", "w") do |f|
+    File.open("app/fah.json", "w") do |f|
       f.write({ stats: api_total[:stats], rank: api_total[:rank] }.to_json)
     end
   end
 
   def load_file
-    file = File.read("fah.json")
+    file = File.read("app/fah.json")
     return JSON.parse(file)
   end
 
