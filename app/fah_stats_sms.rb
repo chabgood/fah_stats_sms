@@ -73,7 +73,7 @@ class FahStatsSms
   end
 
   def load_file
-    file = File.read("#{File.dirname(__FILE__)}/../fah.json")
+    file = File.read("fah.json")
     return JSON.parse(file)
   end
 
