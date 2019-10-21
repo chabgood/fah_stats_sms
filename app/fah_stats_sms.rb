@@ -61,6 +61,7 @@ class FahStatsSms
     rank = number_to_human(api_total[:rank], precision: 5)
     score = number_to_human(api_total[:score], precision: 5)
     ppd = number_to_human(self.ppd, precision: 5)
+    binding.pry
     self.client.messages.create(from: self.from, to: self.to,
       body: "Score: #{score} \n Current Team Total: #{stats} \n Total Rank: #{rank} \n PPD: #{ppd} \n GPUS: #{self.gpus_running}"
     )
@@ -73,6 +74,7 @@ class FahStatsSms
   end
 
   def load_file
+	  binding.pry
     file = File.read("app/fah.json")
     return JSON.parse(file)
   end
