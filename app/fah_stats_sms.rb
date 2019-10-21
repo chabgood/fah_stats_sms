@@ -74,7 +74,6 @@ class FahStatsSms
   end
 
   def load_file
-	  binding.pry
     file = File.read("app/fah.json")
     return JSON.parse(file)
   end
