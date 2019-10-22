@@ -48,7 +48,7 @@ class FahStatsSms
   def run
     api_total = get_data
     file_hash = load_file
-    return if api_total[:stats] == file_hash["stats"]
+    #return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
     get_ppd_and_gpus_running
     send_sms(api_total)
