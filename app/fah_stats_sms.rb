@@ -77,9 +77,10 @@ class FahStatsSms
 
   def get_data
     data_rank = self.class.get('/user/MrMoo').parsed_response
-    team_score = data_rank['teams'][2]['score']
-    team_name = data_rank['teams'][2]['name']
-    return { team_score: team_score, overall_rank: data_rank['rank'].to_i, overall_score: data_rank['score'], team_name: team_name }
+    data_rank_team = data_rank['teams'].select{ |hash| hash['name'] == "Curecoin"}.first
+    team_score = data_rank_team['score']
+    team_name = data_rank_team['name']
+    return { team_score: team_score, overall_rank: data_rank_team['rank'].to_i, overall_score: data_rank_team['score'], team_name: team_name }
   end
 
   def get_ppd_and_gpus_running
