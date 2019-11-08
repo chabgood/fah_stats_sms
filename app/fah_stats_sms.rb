@@ -80,7 +80,7 @@ class FahStatsSms
     data_rank_team = data_rank['teams'].select{ |hash| hash['name'] == "Curecoin"}.first
     team_score = data_rank_team['score']
     team_name = data_rank_team['name']
-    return { team_score: team_score, overall_rank: data_rank['rank'].to_i, overall_score: data_rank_team['score'], team_name: team_name }
+    return { overall_rank: data_rank['rank'].to_i, overall_score: data_rank['score'], team_name: team_name, team_score: team_score }
   end
 
   def get_ppd_and_gpus_running
