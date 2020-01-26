@@ -3,7 +3,7 @@ require 'net/telnet'
 
 gemfile do
   source 'https://rubygems.org'
-  ruby '2.6.5'
+  ruby '2.7.0'
 
   gem 'httparty'
   gem 'twilio-ruby'
@@ -24,7 +24,7 @@ require 'json'
 class FahStatsSms
   include HTTParty
   include ActionView::Helpers::NumberHelper
-
+  DIR=File.join(File.dirname(__FILE__), 'fah.json')
   base_uri 'https://api.foldingathome.org/'
 
   attr_accessor :number, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running
@@ -65,13 +65,13 @@ class FahStatsSms
   end
 
   def update_total(api_total)
-    File.open("app/fah.json", "w") do |f|
+    File.open(DIR, "w") do |f|
       f.write({ overall_score: api_total[:overall_score], overall_rank: api_total[:overall_rank] }.to_json)
     end
   end
 
   def load_file
-    file = File.read("app/fah.json")
+    file = File.read(DIR)
     return JSON.parse(file)
   end
 
