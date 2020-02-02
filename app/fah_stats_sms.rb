@@ -52,6 +52,7 @@ class FahStatsSms
     update_total(api_total)
     get_ppd_and_gpus_running
     send_sms(api_total)
+    nvidia_temps
   end
 
   private
@@ -87,6 +88,17 @@ class FahStatsSms
     pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
     pop.cmd("ppd") { |c| self.ppd = c.scan(/^[0-9]*\.[0-9]*$/).last }
     pop.cmd("slot-info") { |c| self.gpus_running = c.scan(/RUNNING/).length }
+  end
+
+  def nvidia_temps
+    data = `nvidia-smi --query-gpu=gpu_name,temperature.gpu --format=csv,noheader`
+    table =""
+    arr = data.split("\n")
+    arr.each do |card|
+      card_data = card.split(",")
+      table << "#{card_data[0]} - #{card_data[1]}C\n"
+    end
+    self.client.messages.create(from: self.from, to: self.to, body: "#{table}")
   end
 end
 
