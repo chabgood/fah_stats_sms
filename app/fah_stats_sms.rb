@@ -27,13 +27,14 @@ class FahStatsSms
   DIR=File.join(File.dirname(__FILE__), 'fah.json')
   base_uri 'https://api.foldingathome.org/'
 
-  attr_accessor :number, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running
+  attr_accessor :number, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running
 
   def initialize()
     @number = 0
     @query = { query: {  passkey: ENV["PASSKEY"], team: ENV["TEAM"], header: { 'Content-Type' => 'application/json' } } }
     @ppd = 0
     @gpus_running = 0
+    @table = ""
     initialize_twilio_info
   end
 
@@ -51,8 +52,8 @@ class FahStatsSms
     #return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
     get_ppd_and_gpus_running
-    send_sms(api_total)
     nvidia_temps
+    send_sms(api_total)
   end
 
   private
@@ -62,7 +63,7 @@ class FahStatsSms
     overall_rank = number_to_human(api_total[:overall_rank], precision: 5)
     team_score = number_to_human(api_total[:team_score], precision: 5)
     ppd = number_to_human(self.ppd, precision: 5)
-    self.client.messages.create(from: self.from, to: self.to, body: "Score: #{overall_score} \n Total Rank: #{overall_rank} \n Team: #{api_total[:team_name]} \n Team Total: #{team_score} \n PPD: #{ppd} \n GPUS: #{self.gpus_running}")
+    self.client.messages.create(from: self.from, to: self.to, body: "Score: #{overall_score} \n Total Rank: #{overall_rank} \n Team: #{api_total[:team_name]} \n Team Total: #{team_score} \n PPD: #{ppd} \n GPUS: #{self.gpus_running}\n\nGPU TEMPS:\n#{self.table}")
   end
 
   def update_total(api_total)
@@ -92,13 +93,11 @@ class FahStatsSms
 
   def nvidia_temps
     data = `nvidia-smi --query-gpu=gpu_name,temperature.gpu --format=csv,noheader`
-    table =""
     arr = data.split("\n")
     arr.each do |card|
       card_data = card.split(",")
-      table << "#{card_data[0]} - #{card_data[1]}C\n"
+      self.table << "#{card_data[0]} - #{card_data[1]}C\n"
     end
-    self.client.messages.create(from: self.from, to: self.to, body: "#{table}")
   end
 end
 
