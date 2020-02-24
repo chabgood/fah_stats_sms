@@ -51,8 +51,8 @@ class FahStatsSms
     file_hash = load_file
     #return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
-    get_ppd_and_gpus_running
-    nvidia_temps
+    get_ppd
+    nvidia_temps_and_gpus_running
     send_sms(api_total)
   end
 
@@ -85,15 +85,15 @@ class FahStatsSms
     return { overall_rank: data_rank['rank'].to_i, overall_score: data_rank['score'], team_name: team_name, team_score: team_score }
   end
 
-  def get_ppd_and_gpus_running
+  def get_ppd
     pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
     pop.cmd("ppd") { |c| self.ppd = c.scan(/^[0-9]*\.[0-9]*$/).last }
-    pop.cmd("slot-info") { |c| self.gpus_running = c.scan(/RUNNING/).length }
   end
 
-  def nvidia_temps
+  def nvidia_temps_and_gpus_running
     data = `nvidia-smi --query-gpu=gpu_name,temperature.gpu --format=csv,noheader`
     arr = data.split("\n")
+    self.gpus_running = arr.length
     arr.each do |card|
       card_data = card.split(",")
       self.table << "#{card_data[0]} - #{card_data[1]}C\n"
