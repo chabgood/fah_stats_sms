@@ -88,12 +88,12 @@ class FahStatsSms
   def get_ppd
     pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
     pop.cmd("ppd") { |c| self.ppd = c.scan(/^[0-9]*\.[0-9]*$/).last }
+    pop.cmd("slot-info") { |c| self.gpus_running = c.scan(/RUNNING/).length }
   end
 
   def nvidia_temps_and_gpus_running
     data = `nvidia-smi --query-gpu=gpu_name,temperature.gpu --format=csv,noheader`
     arr = data.split("\n")
-    self.gpus_running = arr.length
     arr.each do |card|
       card_data = card.split(",")
       self.table << "#{card_data[0]} - #{card_data[1]}C\n"
