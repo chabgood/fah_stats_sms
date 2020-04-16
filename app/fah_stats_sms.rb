@@ -27,7 +27,7 @@ class FahStatsSms
   DIR=File.join(File.dirname(__FILE__), 'fah.json')
   base_uri 'https://api.foldingathome.org/'
 
-  attr_accessor :number, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running
+  attr_accessor :number, :pop, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running
 
   def initialize()
     @number = 0
@@ -35,6 +35,7 @@ class FahStatsSms
     @ppd = 0
     @gpus_running = 0
     @table = ""
+    @pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
     initialize_twilio_info
   end
 
@@ -52,6 +53,7 @@ class FahStatsSms
     #return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
     get_ppd
+    get_gpus_running
     nvidia_temps_and_gpus_running
     send_sms(api_total)
   end
@@ -86,9 +88,21 @@ class FahStatsSms
   end
 
   def get_ppd
-    pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
-    pop.cmd("ppd") { |c| self.ppd = c.scan(/^[0-9]*\.[0-9]*$/).last }
-    pop.cmd("slot-info") { |c| self.gpus_running = c.scan(/RUNNING/).length }
+    ppd_data = pop.cmd("ppd").scan(/^[0-9]*\.[0-9]*$/)&.last
+    while ppd_data.nil?
+      ppd_data = pop.cmd('ppd').scan(/^[0-9]*\.[0-9]*$/).last
+      sleep 2
+    end
+    self.ppd = ppd_data
+  end
+
+  def get_gpus_running
+    slots_data = pop.cmd("slot-info").scan(/RUNNING/).length 
+    while slots_data.zero?
+      slots_data = pop.cmd('slot-info').scan(/RUNNING/).length 
+      sleep 2
+    end
+    self.gpus_running = slots_data
   end
 
   def nvidia_temps_and_gpus_running
