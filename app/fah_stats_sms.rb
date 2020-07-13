@@ -11,6 +11,9 @@ gemfile do
   gem 'json'
   gem 'actionview'
   gem 'dotenv'
+  gem 'chronic'
+  gem 'activerecord'
+  gem 'pg'
 end
 
 require 'dotenv/load'
@@ -19,6 +22,8 @@ require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
 require 'json'
+require 'active_record'
+
 
 
 class FahStatsSms
@@ -27,7 +32,7 @@ class FahStatsSms
   DIR=File.join(File.dirname(__FILE__), 'fah.json')
   base_uri 'https://api.foldingathome.org/'
 
-  attr_accessor :number, :pop, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running
+  attr_accessor :number, :pop, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running, :json_data
 
   def initialize()
     @number = 0
@@ -36,6 +41,7 @@ class FahStatsSms
     @gpus_running = 0
     @table = ""
     @pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
+    @json_data = {}
     initialize_twilio_info
   end
 
@@ -49,13 +55,18 @@ class FahStatsSms
 
   def run
     api_total = get_data
-    file_hash = load_file
-    #return if api_total[:stats] == file_hash["stats"]
     update_total(api_total)
     get_ppd
     get_gpus_running
     nvidia_temps_and_gpus_running
-    send_sms(api_total)
+    now = Chronic.parse('now')
+    send_sms(api_total) if now > Chronic.parse('7:59 AM') and now < Chronic.parse('11 PM')
+    update_database
+  end
+
+  def update_database
+    db = Database.new(json_data)
+    db.run
   end
 
   private
@@ -74,13 +85,9 @@ class FahStatsSms
     end
   end
 
-  def load_file
-    file = File.read(DIR)
-    return JSON.parse(file)
-  end
-
   def get_data
-    data_rank = self.class.get('/user/MrMoo').parsed_response
+    data_rank = self.class.get("/user/MrMoo?passkey=#{ENV['PASSKEY']}").parsed_response
+    self.json_data = data_rank
     data_rank_team = data_rank['teams'].select{ |hash| hash['name'] == "Curecoin"}.first
     team_score = data_rank_team['score']
     team_name = data_rank_team['name']
@@ -113,7 +120,71 @@ class FahStatsSms
       self.table << "#{card_data[0]} - #{card_data[1]}C\n"
     end
   end
+
 end
 
+ActiveRecord::Base.establish_connection(
+    adapter:  'postgresql', # or 'postgresql' or 'sqlite3' or 'oracle_enhanced'
+    host:     'localhost',
+    database: 'fah',
+    username: 'chabgood',
+    password: ENV['DB_PW']
+  )
+
+class Database
+  
+  attr_accessor :json_data
+  def initialize(json)
+    @json_data = json
+  end
+
+  class User < ActiveRecord::Base
+    has_many :teams
+    has_many :projects
+    has_many :user_data,class_name: 'UserData'
+  end
+
+  class UserData < ActiveRecord::Base
+    self.table_name  = 'user_data'
+    belongs_to :team
+  end
+
+  class Team < ActiveRecord::Base
+    belongs_to :user
+    has_many :team_data, class_name: 'TeamData'
+  end
+
+  class TeamData < ActiveRecord::Base
+    self.table_name  = 'team_data'
+    belongs_to :user
+  end
+
+  class Project < ActiveRecord::Base
+    belongs_to :user
+  end
+
+  def run
+    u  = User.find_or_create_by(name: json_data['name'])
+    u.user_data.find_or_create_by(id: json_data['id'], score: json_data['score']) do |user_data|
+      user_data.rank = json_data['rank']
+      user_data.wus =  json_data['wus']
+    end
+
+    json_data['teams'].each do |team|
+      t = u.teams.find_or_create_by(name: team['name'], team: team['team'])
+      t.team_data.find_or_create_by(score: team['score']) do |team_data|
+        team_data.wus = team['wus']
+      end
+    end
+    a = Project.pluck(:name)
+    b = json_data['projects']
+    ar = (a-b) + (b-a)
+    ar.each do |ar|
+      u.projects.create(name: ar)
+    end
+  end
+
+end
 fah = FahStatsSms.new
 fah.run
+fah.update_database
