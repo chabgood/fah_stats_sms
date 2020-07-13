@@ -104,6 +104,7 @@ class FahStatsSms
   end
 
   def get_gpus_running
+    slots_data = 0
     slots_data = pop.cmd("slot-info").scan(/RUNNING/).length 
     while slots_data.zero?
       slots_data = pop.cmd('slot-info').scan(/RUNNING/).length 
