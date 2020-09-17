@@ -4,14 +4,15 @@ require 'bundler/inline'
 gemfile do
   ruby '2.7.0'
 
+  gem 'net-telnet'
   gem 'httparty'
   gem 'twilio-ruby'
-  gem 'pry'
+  # gem 'pry'
   gem 'json'
   gem 'actionview'
   gem 'dotenv'
   gem 'chronic'
-  gem 'activerecord'
+  # gem 'activerecord'
   gem 'pg'
   gem 'nokogiri'
 end
@@ -22,7 +23,7 @@ require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
 require 'json'
-require 'active_record'
+# require 'active_record'
 
 require 'dotenv'
 Dotenv.load
@@ -64,13 +65,13 @@ class FahStatsSms
     # update_database
   end
 
+  private
+  
   def update_database
     # db = Database.new(json_data)
     # db.run
   end
-
-  private
-
+  
   def send_sms(api_total)
     overall_score = number_to_human(api_total[:overall_score], precision: 5)
     overall_rank = number_to_human(api_total[:overall_rank], precision: 5)
