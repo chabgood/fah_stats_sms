@@ -1,14 +1,13 @@
 require 'net/telnet'
-
-require 'dotenv/load'
-require 'pry'
+# require 'pry'
 require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
 require 'json'
 require 'active_record'
 
-
+require 'dotenv'
+Dotenv.load
 
 class FahStatsSms
   include HTTParty
