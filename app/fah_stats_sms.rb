@@ -1,20 +1,4 @@
-require 'bundler/inline'
 require 'net/telnet'
-
-gemfile do
-  source 'https://rubygems.org'
-  ruby '2.7.0'
-
-  gem 'httparty'
-  gem 'twilio-ruby'
-  gem 'pry'
-  gem 'json'
-  gem 'actionview'
-  gem 'dotenv'
-  gem 'chronic'
-  gem 'activerecord'
-  gem 'pg'
-end
 
 require 'dotenv/load'
 require 'pry'
@@ -59,14 +43,13 @@ class FahStatsSms
     get_ppd
     get_gpus_running
     nvidia_temps_and_gpus_running
-    now = Chronic.parse('now')
-    send_sms(api_total) if now > Chronic.parse('7:59 AM') and now < Chronic.parse('11 PM')
-    update_database
+    send_sms(api_total)
+    # update_database
   end
 
   def update_database
-    db = Database.new(json_data)
-    db.run
+    # db = Database.new(json_data)
+    # db.run
   end
 
   private
@@ -129,7 +112,7 @@ ActiveRecord::Base.establish_connection(
     host:     'localhost',
     database: 'fah',
     username: 'chabgood',
-    password: ENV['DB_PW']
+    password: ENV['DB_PW'] || ''
   )
 
 class Database
