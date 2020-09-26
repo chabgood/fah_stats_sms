@@ -1,32 +1,27 @@
 require 'bundler/inline'
-require 'bundler/inline'
 
-gemfile do
+gemfile(true) do
+  source 'https://rubygems.org'
+
   ruby '2.7.0'
 
   gem 'net-telnet'
   gem 'httparty'
   gem 'twilio-ruby'
-  # gem 'pry'
   gem 'json'
   gem 'actionview'
   gem 'dotenv'
   gem 'chronic'
-  # gem 'activerecord'
-  gem 'pg'
-  gem 'nokogiri'
+  gem 'pry'
 end
 
 require 'net/telnet'
-# require 'pry'
+require 'dotenv/load'
 require 'httparty'
 require 'action_view'
 require 'twilio-ruby'
 require 'json'
 # require 'active_record'
-
-require 'dotenv'
-Dotenv.load
 
 class FahStatsSms
   include HTTParty
@@ -34,25 +29,26 @@ class FahStatsSms
   DIR=File.join(File.dirname(__FILE__), 'fah.json')
   base_uri 'https://api.foldingathome.org/'
 
-  attr_accessor :number, :pop, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running, :json_data
+  attr_accessor :number, :pop, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running, :json_data, :cards_ppd
 
   def initialize()
     @number = 0
-    @query = { query: {  passkey: ENV["PASSKEY"], team: ENV["TEAM"], header: { 'Content-Type' => 'application/json' } } }
+    @query = { query: {  passkey: '9387fffbc9962ce2bb7bc6f2ce2208bf', team: '224497', header: { 'Content-Type' => 'application/json' } } }
     @ppd = 0
     @gpus_running = 0
     @table = ""
     @pop = Net::Telnet::new("Host" => "localhost", "Port" => 36330)
     @json_data = {}
+    @cards_ppd = []
     initialize_twilio_info
   end
 
   def initialize_twilio_info
-    @account_sid = ENV["ACCT_SID"]
-    @auth_token = ENV["AUTH_TOKEN"]
+    @account_sid = 'ACf1cf62eb0d4ec9af3d6d7fce29ae5ac1'
+    @auth_token = '7e8e6099e9b5cbfd4333b2b03d1f87c2'
     @client = Twilio::REST::Client.new(account_sid, auth_token)
-    @from = ENV["FROM"]
-    @to =  ENV["TO"]
+    @from = '+1 512 729 5610'
+    @to = '+1 512 438 9622'
   end
 
   def run
@@ -61,6 +57,7 @@ class FahStatsSms
     get_ppd
     get_gpus_running
     nvidia_temps_and_gpus_running
+    get_cards_ppd
     send_sms(api_total)
     # update_database
   end
@@ -77,7 +74,11 @@ class FahStatsSms
     overall_rank = number_to_human(api_total[:overall_rank], precision: 5)
     team_score = number_to_human(api_total[:team_score], precision: 5)
     ppd = number_to_human(self.ppd, precision: 5)
-    self.client.messages.create(from: self.from, to: self.to, body: "Score: #{overall_score} \n Total Rank: #{overall_rank} \n Team: #{api_total[:team_name]} \n Team Total: #{team_score} \n PPD: #{ppd} \n GPUS: #{self.gpus_running}\n\nGPU TEMPS:\n#{self.table}")
+    self.client.messages.create(
+      from: self.from, 
+      to: self.to, 
+      body: "Score: #{overall_score} \n Total Rank: #{overall_rank} \n Team: #{api_total[:team_name]} \n Team Total: #{team_score} \n PPD: #{ppd} \n GPUS: #{self.gpus_running}\n\nGPU TEMPS:\n#{self.table} \n #{self.cards_ppd}"
+    )
   end
 
   def update_total(api_total)
@@ -121,6 +122,15 @@ class FahStatsSms
       card_data = card.split(",")
       self.table << "#{card_data[0]} - #{card_data[1]}C\n"
     end
+  end
+
+  def get_cards_ppd
+   cards = pop.cmd('queue-info').scan(/"id":\s"(\d*)".*"ppd":\s*"([0-9]*)/).sort_by{ |card| card[0]}
+   str=""
+   cards.each do |card|
+    str << "slot #{card[0]} - #{number_to_human(card[1], precision: 6)}\n"
+   end
+   self.cards_ppd = str
   end
 
 end
