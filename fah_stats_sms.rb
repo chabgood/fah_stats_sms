@@ -33,7 +33,7 @@ class FahStatsSms
 
   def initialize()
     @number = 0
-    @query = { query: {  passkey: '9387fffbc9962ce2bb7bc6f2ce2208bf', team: '224497', header: { 'Content-Type' => 'application/json' } } }
+    @query = { query: {  passkey: ENV['PASSKEY'], team: ENV["TEAM"], header: { 'Content-Type' => 'application/json' } } }
     @ppd = 0
     @gpus_running = 0
     @table = ""
@@ -44,11 +44,11 @@ class FahStatsSms
   end
 
   def initialize_twilio_info
-    @account_sid = 'ACf1cf62eb0d4ec9af3d6d7fce29ae5ac1'
-    @auth_token = '7e8e6099e9b5cbfd4333b2b03d1f87c2'
+    @account_sid = ENV["ACCOUNT_SID"]
+    @auth_token = ENV["AUTH_TOKEN"]
     @client = Twilio::REST::Client.new(account_sid, auth_token)
-    @from = '+1 512 729 5610'
-    @to = '+1 512 438 9622'
+    @from = ENV["FROM"]
+    @to = ENV["TO"]
   end
 
   def run
