@@ -10,6 +10,7 @@ gemfile(true) do
   gem 'twilio-ruby'
   gem 'json'
   gem 'actionview'
+  gem 'activesupport'
   gem 'dotenv'
   gem 'chronic'
   gem 'pry'
@@ -22,11 +23,9 @@ require 'action_view'
 require 'twilio-ruby'
 require 'json'
 # require 'active_record'
-
 class FahStatsSms
   include HTTParty
   include ActionView::Helpers::NumberHelper
-  DIR=File.join(File.dirname(__FILE__), 'fah.json')
   base_uri 'https://api.foldingathome.org/'
 
   attr_accessor :number, :pop, :table, :query, :account_sid, :auth_token, :client, :to, :from, :ppd, :gpus_running, :json_data, :cards_ppd
@@ -44,18 +43,15 @@ class FahStatsSms
   end
 
   def initialize_twilio_info
-    @account_sid = ENV["ACCOUNT_SID"]
+    @account_sid = ENV["ACCT_SID"]
     @auth_token = ENV["AUTH_TOKEN"]
-    @client = Twilio::REST::Client.new(account_sid, auth_token)
+    @client = Twilio::REST::Client.new(@account_sid, @auth_token)
     @from = ENV["FROM"]
     @to = ENV["TO"]
   end
 
   def run
     api_total = get_data
-    update_total(api_total)
-    get_ppd
-    get_gpus_running
     nvidia_temps_and_gpus_running
     get_cards_ppd
     send_sms(api_total)
@@ -81,12 +77,6 @@ class FahStatsSms
     )
   end
 
-  def update_total(api_total)
-    File.open(DIR, "w") do |f|
-      f.write({ overall_score: api_total[:overall_score], overall_rank: api_total[:overall_rank] }.to_json)
-    end
-  end
-
   def get_data
     data_rank = self.class.get("/user/MrMoo?passkey=#{ENV['PASSKEY']}").parsed_response
     self.json_data = data_rank
@@ -94,25 +84,6 @@ class FahStatsSms
     team_score = data_rank_team['score']
     team_name = data_rank_team['name']
     return { overall_rank: data_rank['rank'].to_i, overall_score: data_rank['score'], team_name: team_name, team_score: team_score }
-  end
-
-  def get_ppd
-    ppd_data = pop.cmd("ppd").scan(/^[0-9]*\.[0-9]*$/)&.last
-    while ppd_data.nil?
-      ppd_data = pop.cmd('ppd').scan(/^[0-9]*\.[0-9]*$/).last
-      sleep 2
-    end
-    self.ppd = ppd_data
-  end
-
-  def get_gpus_running
-    slots_data = 0
-    slots_data = pop.cmd("slot-info").scan(/RUNNING/).length 
-    while slots_data.zero?
-      slots_data = pop.cmd('slot-info').scan(/RUNNING/).length 
-      sleep 2
-    end
-    self.gpus_running = slots_data
   end
 
   def nvidia_temps_and_gpus_running
@@ -126,11 +97,15 @@ class FahStatsSms
 
   def get_cards_ppd
    cards = pop.cmd('queue-info').scan(/"id":\s"(\d*)".*"ppd":\s*"([0-9]*)/).sort_by{ |card| card[0]}
-   str=""
-   cards.each do |card|
-    str << "slot #{card[0]} - #{number_to_human(card[1], precision: 6)}\n"
-   end
-   self.cards_ppd = str
+   while cards.length.zero?
+    cards = pop.cmd('queue-info').scan(/"id":\s"(\d*)".*"ppd":\s*"([0-9]*)/).sort_by{ |card| card[0]}
+    str = cards.inject("") do |str, card|
+      str << "slot #{card[0]} - #{number_to_human(card[1], precision: 6)}\n"
+    end
+    self.gpus_running = cards.length
+    self.ppd = cards.sum{ |n| n[1].to_i}
+    self.cards_ppd = str
+  end
   end
 
 end
