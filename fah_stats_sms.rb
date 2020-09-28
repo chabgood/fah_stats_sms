@@ -100,7 +100,7 @@ class FahStatsSms
    while cards.length.zero?
     cards = pop.cmd('queue-info').scan(/"id":\s"(\d*)".*"ppd":\s*"([0-9]*)/).sort_by{ |card| card[0]}
     str = cards.inject("") do |str, card|
-      str << "slot #{card[0]} - #{number_to_human(card[1], precision: 6)}\n"
+      str << "slot #{Integer(card[0], 10)} - #{number_to_human(card[1], precision: 6)}\n"
     end
     self.gpus_running = cards.length
     self.ppd = cards.sum{ |n| n[1].to_i}
