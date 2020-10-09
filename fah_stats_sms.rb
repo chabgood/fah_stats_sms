@@ -102,6 +102,7 @@ class FahStatsSms
     str = cards.inject("") do |str, card|
       str << "slot #{Integer(card[0], 10)} - #{number_to_human(card[1], precision: 6)}\n"
     end
+    cards = cards.find_all{ |n| n[1] != "0" }
     self.gpus_running = cards.length
     self.ppd = cards.sum{ |n| n[1].to_i}
     self.cards_ppd = str
