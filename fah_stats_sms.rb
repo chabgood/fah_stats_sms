@@ -93,6 +93,7 @@ class FahStatsSms
       card_data = card.split(",")
       self.table << "#{card_data[0]} - #{card_data[1]}C\n"
     end
+    self.gpus_running = arr.length
   end
 
   def get_cards_ppd
@@ -102,7 +103,6 @@ class FahStatsSms
     str = cards.inject("") do |str, card|
       str << "slot #{Integer(card[0], 10)} - #{number_to_human(card[1], precision: 6)}\n"
     end
-    self.gpus_running = cards.length
     self.ppd = cards.sum{ |n| n[1].to_i}
     self.cards_ppd = str
   end
